@@ -26,7 +26,7 @@ class ByodOrchestrator(OrchestratorBase):
         self.llm_helper = LLMHelper()
         self.env_helper = EnvHelper()
         # delete config if default message is not needed
-        self.config = ConfigHelper()
+        #self.config = ConfigHelper.get_active_config_or_default()
 
 
     async def orchestrate(
@@ -45,21 +45,20 @@ class ByodOrchestrator(OrchestratorBase):
         # I don't think there should be a distinction between should use data and should not use data - let's just leave the without data func but default to the other one
         # - in_scope: it's a parameter in the payload so it's implied and managed by the server if optional or mandatory
 
-        """This function streams the response from Azure OpenAI with data."""
-        openai_client = self.llm_helper.get_llm()
+        openai_client = self.llm_helper.openai_client
 
-        request_messages = user_message
+        request_messages: List[dict] = [{"role": "user", "content": user_message}]
         messages = []
 
         # keeping the default prompts for now - change here if needed
-        config = self.config.get_active_config_or_default()
-        if config.prompts.use_on_your_data_format:
+        if self.config.prompts.use_on_your_data_format:
             messages.append(
-                {"role": "system", "content": config.prompts.answering_system_prompt}
+                {"role": "system", "content": self.config.prompts.answering_system_prompt}
             )
         # build the message array for the payload
+        logger.info("Request messages: %s", request_messages)
         for message in request_messages:
-            messages.append({"role": message["role"], "content": message["content"]})
+            messages.append({"role": message['role'], "content": message["content"]})
 
         # Azure OpenAI takes the deployment name as the model name, "AZURE_OPENAI_MODEL" means
         # deployment name.
@@ -135,6 +134,9 @@ class ByodOrchestrator(OrchestratorBase):
             },
         )
 
+        #log output
+        logger.info("choices_ghcp: %s", response.choices[0].message.model_extra["context"].get("citations"))
+
         if not self.env_helper.SHOULD_STREAM:
             citations = self.get_citations(citation_list=response.choices[0].message.model_extra["context"])
             response_obj = {
@@ -163,7 +165,37 @@ class ByodOrchestrator(OrchestratorBase):
                 ],
             }
 
-            return response_obj
+            ##format answer
+            #answer = Answer(
+            #    question=user_message,
+            #    answer=response_obj.choices[0].messages[1].content
+            #)
+#
+            #if answer.answer is None:
+            #    answer.answer = "The requested information is not available in the retrieved data. Please try another query or topic."
+#
+            ## Call Content Safety tool with answers
+            #if self.config.prompts.enable_content_safety:
+            #    if response := self.call_content_safety_output(user_message, answer.answer):
+            #        return response
+#
+
+#
+            ## Format the output for the UI
+            answer = Answer.from_json(response.choices[0].message)
+            #answer = Answer(
+            #    question=user_message,
+            #    answer=response.choices[0].message.content#,
+            #    #source_documents=response.choices[0].message.model_extra["context"].get("citations")
+            #)
+            messages = self.output_parser.parse(
+                question=answer.question,
+                answer=answer.answer,
+                source_documents=answer.source_documents
+            )
+            return messages
+
+            #return response_obj
 
         return Response(self.stream_with_data(response), mimetype="application/json-lines")
 
