@@ -1,20 +1,13 @@
 import logging
-from typing import Coroutine, List
+from typing import List
 import json
-from urllib.parse import quote
-import re
 from openai import Stream
 from openai.types.chat import ChatCompletionChunk
 from flask import Response
 
 from .orchestrator_base import OrchestratorBase
 from ..helpers.llm_helper import LLMHelper
-from ..helpers.azure_blob_storage_client import AzureBlobStorageClient
 from ..helpers.env_helper import EnvHelper
-from ..helpers.config.config_helper import ConfigHelper
-from ..tools.post_prompt_tool import PostPromptTool
-from ..tools.question_answer_tool import QuestionAnswerTool
-from ..tools.text_processing_tool import TextProcessingTool
 from ..common.answer import Answer
 from ..common.source_document import SourceDocument
 
@@ -135,36 +128,34 @@ class ByodOrchestrator(OrchestratorBase):
             },
         )
 
-        #log output
-        logger.info("choices_ghcp: %s", response.choices[0].message.model_extra["context"].get("citations"))
 
         if not self.env_helper.SHOULD_STREAM:
             citations = self.get_citations(citation_list=response.choices[0].message.model_extra["context"])
-            response_obj = {
-                "id": response.id,
-                "model": response.model,
-                "created": response.created,
-                "object": response.object,
-                "choices": [
-                    {
-                        "messages": [
-                            {
-                                "content": json.dumps(
-                                    citations,
-                                    ensure_ascii=False,
-                                ),
-                                "end_turn": False,
-                                "role": "tool",
-                            },
-                            {
-                                "end_turn": True,
-                                "content": response.choices[0].message.content,
-                                "role": "assistant",
-                            },
-                        ]
-                    }
-                ],
-            }
+#            response_obj = {
+#                "id": response.id,
+#                "model": response.model,
+#                "created": response.created,
+#                "object": response.object,
+#                "choices": [
+#                    {
+#                        "messages": [
+#                            {
+#                                "content": json.dumps(
+#                                    citations,
+#                                    ensure_ascii=False,
+#                                ),
+#                                "end_turn": False,
+#                                "role": "tool",
+#                            },
+#                            {
+#                                "end_turn": True,
+#                                "content": response.choices[0].message.content,
+#                                "role": "assistant",
+#                            },
+#                        ]
+#                    }
+#                ],
+#            }
 
             ##format answer
             #answer = Answer(
@@ -223,8 +214,8 @@ class ByodOrchestrator(OrchestratorBase):
 
     def get_citations(self, citation_list):
         """Returns Formated Citations"""
-        blob_client = AzureBlobStorageClient()
-        container_sas = blob_client.get_container_sas()
+        #blob_client = AzureBlobStorageClient()
+        #container_sas = blob_client.get_container_sas()
         citations_dict = {"citations": []}
         for citation in citation_list.get("citations"):
             metadata = (
