@@ -56,16 +56,37 @@ docker run -it --env-file ./.env-admin  -p 8080:80 local-admin:1
 ### Local web container run
 
 ```
-docker run -it --env-file ./.env-web  -p 8080:80 local-web:1
+docker run -it --env-file ./.env-web  -p 8081:80 local-web:1
 ```
 
 ### Local functions container run
 
 ```
-docker run -it --env-file ./.env.oldfunc  -p 8080:80 -v ${HOST_DOCKER_FOLDER:-.}/keys:/azure-functions-host/Secrets local-func:1
+docker run -it --env-file ./.env.oldfunc  -p 8082:80 -v ${HOST_DOCKER_FOLDER:-.}/keys:/azure-functions-host/Secrets local-func:1
 ```
 
 in the above, we are taking the file ./docker/function-host.json and copying it to /.docker/keys/hosts.json and then using the "-v" option to mount this file into the container in /azure-functions-hosts/secrets as the file *hosts.json*.
+
+A .gitignore file has been added to the repo to exclude the local hosts.json file from being pushed to the repository
+
+#### Alternative method using a dedicated docker volume
+
+A docker volume can also be used to manage the hosts file so it is external to the repository. The only issue with this is locating the actual folder for the volume within the docker infrastructure of the host file system. Typically on Windows running WSL, this is likely to be
+`\\WSL$\docker-desktop-data\version-pack-data\community\docker\volumes`
+
+Choose a name for the volume and create it :
+
+```
+docker volume create teams-app-keys
+```
+
+As above, copy ./docker/function-host.json into this volume and call it *hosts.json*
+
+Amend the docker run command :
+
+```
+docker run -it --env-file ./.env.oldfunc  -p 8080:80 -v teams-app-keys:/azure-functions-host/Secrets local-func:1
+```
 
 This will allow a REST request to be sent to the running docker container in the following form:
 
