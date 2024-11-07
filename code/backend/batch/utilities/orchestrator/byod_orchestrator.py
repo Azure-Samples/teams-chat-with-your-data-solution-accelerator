@@ -16,6 +16,7 @@ from ..tools.post_prompt_tool import PostPromptTool
 from ..tools.question_answer_tool import QuestionAnswerTool
 from ..tools.text_processing_tool import TextProcessingTool
 from ..common.answer import Answer
+from ..common.source_document import SourceDocument
 
 logger = logging.getLogger(__name__)
 
@@ -179,19 +180,30 @@ class ByodOrchestrator(OrchestratorBase):
             #    if response := self.call_content_safety_output(user_message, answer.answer):
             #        return response
 #
-
+            #citations_array = response.choices[0].message.model_extra["context"].get("citations")
 #
             ## Format the output for the UI
-            answer = Answer.from_json(response.choices[0].message)
+            #answer = Answer.from_json(json.dumps(response.choices[0]. )
+            #answer = Answer.from_json( {"question": , answer, citations})
+
+            list_source_docs = [SourceDocument.from_dict(c) for c in citations['citations']]
+
+
+
             #answer = Answer(
             #    question=user_message,
-            #    answer=response.choices[0].message.content#,
-            #    #source_documents=response.choices[0].message.model_extra["context"].get("citations")
+            #    answer=response.choices[0].message.content,
+            #    source_documents=[SourceDocument.from_json(c) for c in citations]
+            #    #[SourceDocument.from_json(doc['url']) for doc in citations_array]
+            #    #source_documents = response.choices[0].message.model_extra["context"].get("citations")
             #)
+
+            #q = Answer.from_json
+
             messages = self.output_parser.parse(
-                question=answer.question,
-                answer=answer.answer,
-                source_documents=answer.source_documents
+                question=user_message,
+                answer=response.choices[0].message.content,
+                source_documents=list_source_docs
             )
             return messages
 
@@ -200,13 +212,13 @@ class ByodOrchestrator(OrchestratorBase):
         return Response(self.stream_with_data(response), mimetype="application/json-lines")
 
 
-    def get_markdown_url(self, source, title, container_sas):
-        """Get Markdown URL for a citation"""
-
-        url = quote(source, safe=":/")
-        if "_SAS_TOKEN_PLACEHOLDER_" in url:
-            url = url.replace("_SAS_TOKEN_PLACEHOLDER_", container_sas)
-        return f"[{title}]({url})"
+#    def get_markdown_url(self, source, title, container_sas):
+#        """Get Markdown URL for a citation"""
+#
+#        url = quote(source, safe=":/")
+#        if "_SAS_TOKEN_PLACEHOLDER_" in url:
+#            url = url.replace("_SAS_TOKEN_PLACEHOLDER_", container_sas)
+#        return f"[{title}]({url})"
 
 
     def get_citations(self, citation_list):
@@ -221,19 +233,20 @@ class ByodOrchestrator(OrchestratorBase):
                 else citation["url"]
             )
             title = citation["title"]
-            url = self.get_markdown_url(metadata["source"], title, container_sas)
+            #url = self.get_markdown_url(metadata["source"], title, container_sas)
             citations_dict["citations"].append(
                 {
-                    "content": url + "\n\n\n" + citation["content"],
+                    "content": citation["content"], #url + "\n\n\n" + citation["content"], ,
                     "id": metadata["id"],
-                    "chunk_id": (
-                        re.findall(r"\d+", metadata["chunk_id"])[-1]
-                        if metadata["chunk_id"] is not None
-                        else metadata["chunk"]
-                    ),
+                    "chunk_id": citation.get('chunk_id'),#(
+                    #    re.findall(r"\d+", metadata["chunk_id"])[-1]
+                    #    if metadata["chunk_id"] is not None
+                    #    else metadata["chunk"]
+                    #),
                     "title": title,
-                    "filepath": title.split("/")[-1],
-                    "url": url,
+                    #"filepath": title.split("/")[-1],
+                    "source": metadata["source"],
+                    #"chunk": 0
                 }
             )
         return citations_dict
