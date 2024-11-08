@@ -1,6 +1,7 @@
 import {
   TeamsActivityHandler,
   TurnContext,
+  CardFactory,
   ActivityTypes,
   MessageFactory
 } from "botbuilder";
@@ -15,6 +16,16 @@ import { cwydResponseBuilder } from "./cards/cardBuilder";
 
 const EMPTY_RESPONSE = "Sorry, I do not have an answer. Please try again.";
 
+const history: ChatMessage[] = []; // JM+ Store the user's message in the history
+
+// Function to clear history after a period of time
+const clearHistory = () => {
+  history.length = 0;
+};
+
+// Set an interval to clear history every 2 minutes (120000 milliseconds)
+//setInterval(clearHistory, 120000);
+
 export class TeamsBot extends TeamsActivityHandler {
   constructor() {
     super();
@@ -23,8 +34,41 @@ export class TeamsBot extends TeamsActivityHandler {
     let answerwithdisclaimertext = "";
     let activityUpdated = true;
 
+     // Define the Adaptive Card JSON JM+
+     const clearHistoryCard = {
+      type: "AdaptiveCard",
+      body: [
+        {
+          type: "TextBlock",
+          text: "Do you want to clear the chat history?",
+          weight: "Bolder",
+          size: "Medium"
+        }
+      ],
+      actions: [
+        {
+          type: "Action.Submit",
+          title: "Clear History",
+          data: {
+            action: "clearHistory"
+          }
+        }
+      ],
+      $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+      version: "1.2"
+    };
+
     this.onMessage(async (context, next) => {
       console.log("Running with Message Activity.");
+
+      //JM added the clear history functionality
+      const activity = context.activity;
+      if (activity.value && activity.value.action === "clearHistory") {
+        // Clear the chat history
+        history.length = 0;
+        await context.sendActivity("Chat history has been cleared.");
+        return;
+      }
       const removedMentionText = TurnContext.removeRecipientMention(
         context.activity
       );
@@ -42,19 +86,22 @@ export class TeamsBot extends TeamsActivityHandler {
           role: "user",
           content: txt,
         };
-
+        history.push(userMessage); // JM+ Store the user's message in the history
+        const httpBody = JSON.stringify({
+          messages: history, //JM amaneded to include the user's message
+          conversation_id: "",
+        });
+        console.log(httpBody);
         // Call the Azure Function to get the response from Azure OpenAI on your Data
         let result = {} as ChatResponse;
         try {
+
           const response = await fetch(config.azureFunctionUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              messages: [userMessage],
-              conversation_id: "",
-            }),
+            body: httpBody,
           });
 
           // Parse the response
@@ -66,6 +113,7 @@ export class TeamsBot extends TeamsActivityHandler {
               if (done) break;
 
               var text = new TextDecoder("utf-8").decode(value);
+              console.log(text);
               const objects = text.split("\n");
               objects.forEach((obj) => {
                 try {
@@ -79,6 +127,9 @@ export class TeamsBot extends TeamsActivityHandler {
                     });
                   } else {
                     answers.push(userMessage, ...result.choices[0].messages);
+                    history.push(result.choices[0].messages[result.choices[0].messages.length - 1]); // JM+ Store the assistant's last message in the history
+                    // Send the clear history card
+                    context.sendActivity({attachments: [CardFactory.adaptiveCard(clearHistoryCard)]});
                   }
                   runningText = "";
                 } catch (e) {
@@ -133,6 +184,8 @@ export class TeamsBot extends TeamsActivityHandler {
                 activityUpdated = false;
               }
             }
+  
+
           } else if (answer.role === "error") {
             newActivity = MessageFactory.text(
               "Sorry, an error occurred. Try waiting a few minutes. If the issue persists, contact your system administrator. Error: " +
@@ -154,11 +207,15 @@ export class TeamsBot extends TeamsActivityHandler {
             }
             await context.sendActivity(newActivity);
         }
+        
 
       } catch (error) {
         console.log('Error in onMessage:', error);
       } finally {
       }
+
+      // place to put delete activity card? JM
+      //context.sendActivity({attachments: [CardFactory.adaptiveCard(clearHistoryCard)]});
 
       // By calling next() you ensure that the next BotHandler is run.
       await next();
@@ -176,5 +233,6 @@ export class TeamsBot extends TeamsActivityHandler {
       }
       await next();
     });
-  }
+
+    }
 }
