@@ -85,6 +85,16 @@ export function cardBodyBuilder(citations: any[], assistantAnswer: string): any 
             });
         }
     }
+    // JM+ Add a clear history button
+    answerCard["actions"].push(
+        {
+            type: "Action.Submit",
+            title: "Clear Chat History",
+            data: {
+              action: "clearHistory"
+            }
+          }
+    );
 
     return answerCard;
 }
