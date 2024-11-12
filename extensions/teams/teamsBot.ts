@@ -34,29 +34,6 @@ export class TeamsBot extends TeamsActivityHandler {
     let answerwithdisclaimertext = "";
     let activityUpdated = true;
 
-     // Define the Adaptive Card JSON JM+
-     const clearHistoryCard = {
-      type: "AdaptiveCard",
-      body: [
-        {
-          type: "TextBlock",
-          text: "Do you want to clear the chat history?",
-          weight: "Bolder",
-          size: "Medium"
-        }
-      ],
-      actions: [
-        {
-          type: "Action.Submit",
-          title: "Clear History",
-          data: {
-            action: "clearHistory"
-          }
-        }
-      ],
-      $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
-      version: "1.2"
-    };
 
     this.onMessage(async (context, next) => {
       console.log("Running with Message Activity.");
@@ -88,7 +65,7 @@ export class TeamsBot extends TeamsActivityHandler {
         };
         history.push(userMessage); // JM+ Store the user's message in the history
         const httpBody = JSON.stringify({
-          messages: history, //JM amaneded to include the user's message
+          messages: history, //JM amended to include the user's message
           conversation_id: "",
         });
         console.log(httpBody);
@@ -128,8 +105,6 @@ export class TeamsBot extends TeamsActivityHandler {
                   } else {
                     answers.push(userMessage, ...result.choices[0].messages);
                     history.push(result.choices[0].messages[result.choices[0].messages.length - 1]); // JM+ Store the assistant's last message in the history
-                    // Send the clear history card
-                    context.sendActivity({attachments: [CardFactory.adaptiveCard(clearHistoryCard)]});
                   }
                   runningText = "";
                 } catch (e) {
@@ -176,6 +151,7 @@ export class TeamsBot extends TeamsActivityHandler {
               newActivity = MessageFactory.text(answerwithdisclaimertext);
             } else {
               const citations = parseCitationFromMessage(answers[index - 1]) as Citation[];
+              //JM need to look at how we can add the clear history button here
               if (citations.length === 0) {
                 newActivity = MessageFactory.text(answerwithdisclaimertext);
                 newActivity.id = reply.id;
@@ -213,9 +189,6 @@ export class TeamsBot extends TeamsActivityHandler {
         console.log('Error in onMessage:', error);
       } finally {
       }
-
-      // place to put delete activity card? JM
-      //context.sendActivity({attachments: [CardFactory.adaptiveCard(clearHistoryCard)]});
 
       // By calling next() you ensure that the next BotHandler is run.
       await next();
