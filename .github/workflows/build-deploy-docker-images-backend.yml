@@ -1,0 +1,29 @@
+name: Backend App - Build and Deploy Docker Image
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'code/backend/batch/**'
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-push-docker-image:
+   uses: ./.github/workflows/reusable-build-push-docker-image.yml
+   with:
+      dockerfile: "docker/Backend.Dockerfile"
+      image_name: ${{ vars.AZURE_BACKEND_FUNCTION_APP_IMAGE_NAME }}
+   secrets:
+      inherit
+
+  deploy-app:
+    needs: build-push-docker-image
+    uses: ./.github/workflows/reusable-deploy-docker-image.yml
+    with:
+      image_name: ${{ vars.AZURE_BACKEND_FUNCTION_APP_IMAGE_NAME }}
+      deploy_command: "function-app"
+      service_name: ${{ vars.AZURE_BACKEND_FUNCTION_APP_NAME }}
+    secrets:
+      inherit

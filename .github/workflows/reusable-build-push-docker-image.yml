@@ -1,0 +1,73 @@
+name: Reusable Docker build and push workflow
+
+on:
+  workflow_call:
+   inputs:
+      dockerfile:
+        required: true
+        type: string
+      image_name:
+          required: true
+          type: string
+
+jobs:
+  evaluate-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Evaluate environment value
+        id: set-env
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+            echo "::set-output name=environment::prod"
+          else
+            echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+            echo "::set-output name=environment::dev"
+          fi
+      - name: Print environment value
+        run: echo "Environment is $ENVIRONMENT"
+
+  docker-build-push:
+    runs-on: ubuntu-latest
+    needs: evaluate-environment
+    env:
+      ENVIRONMENT: ${{ needs.evaluate-environment.outputs.environment }}
+
+    environment:
+      name: ${{ needs.evaluate-environment.outputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+          username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USER_NAME}}
+          password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set Docker tags
+        id: docker-tags
+        run: |
+          echo "LATEST_TAG=${{ secrets.AZURE_CONTAINER_REGISTRY }}/${{ env.ENVIRONMENT}}_${{ inputs.image_name }}:latest" >> $GITHUB_ENV
+          echo "VERSION_TAG=${{ secrets.AZURE_CONTAINER_REGISTRY }}/${{ env.ENVIRONMENT}}_${{ inputs.image_name }}:${{ github.run_number }}" >> $GITHUB_ENV
+
+
+      - name: Build Docker Image and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ inputs.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.LATEST_TAG }}
+            ${{ env.VERSION_TAG }}
