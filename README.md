@@ -23,7 +23,7 @@ The web application also has a "byod" (presumably bring your own data) flow in-l
 
 The plan is to take this flow and make this as an additional orchestator that can be chosen both by the web application and the Teams application.
 
-![alt text](./docs/images/revised-software-architecture.png "Revised software architecture")
+![alt text](./docs/images/revised-software-architecture2.png "Revised software architecture")
 
 ---
 name: Chat with your data - Solution accelerator (Python)
