@@ -66,8 +66,9 @@ if "orchestrator_strategy" not in st.session_state:
     st.session_state["orchestrator_strategy"] = config.orchestrator.strategy.value
 if "ai_assistant_type" not in st.session_state:
     st.session_state["ai_assistant_type"] = config.prompts.ai_assistant_type
-if "conversational_flow" not in st.session_state:
-    st.session_state["conversational_flow"] = config.prompts.conversational_flow
+################# Conversational flow to be deleted
+#if "conversational_flow" not in st.session_state:
+#    st.session_state["conversational_flow"] = config.prompts.conversational_flow
 if "enable_chat_history" not in st.session_state:
     st.session_state["enable_chat_history"] = st.session_state[
         "enable_chat_history"
@@ -187,16 +188,18 @@ def validate_documents():
 
 
 try:
-    conversational_flow_help = "Whether to use the custom conversational flow or byod conversational flow. Refer to the Conversational flow options README for more details."
-    with st.expander("Conversational flow configuration", expanded=True):
-        cols = st.columns([2, 4])
-        with cols[0]:
-            conv_flow = st.selectbox(
-                "Conversational flow",
-                key="conversational_flow",
-                options=config.get_available_conversational_flows(),
-                help=conversational_flow_help,
-            )
+    ################# conversationanl flow to be deleted
+    # this is the box on the admin config to choose custom or byod conversational flow
+    #conversational_flow_help = "Whether to use the custom conversational flow or byod conversational flow. Refer to the Conversational flow options README for more details."
+    #with st.expander("Conversational flow configuration", expanded=True):
+    #    cols = st.columns([2, 4])
+    #    with cols[0]:
+    #        conv_flow = st.selectbox(
+    #            "Conversational flow",
+    #            key="conversational_flow",
+    #            options=config.get_available_conversational_flows(),
+    #            help=conversational_flow_help,
+    #        )
 
     with st.expander("Orchestrator configuration", expanded=True):
         cols = st.columns([2, 4])
@@ -204,13 +207,16 @@ try:
             st.selectbox(
                 "Orchestrator strategy",
                 key="orchestrator_strategy",
-                options=config.get_available_orchestration_strategies(),
-                disabled=(
-                    True
-                    if st.session_state["conversational_flow"]
-                    == ConversationFlow.BYOD.value
-                    else False
-                ),
+                ########################
+                #### fix this conversational flow deleted reference
+                ###########################
+                options=config.get_available_orchestration_strategies()  #,
+                #disabled=(
+                #    True
+                #    if st.session_state["conversational_flow"]
+                #    == ConversationFlow.BYOD.value
+                #    else False
+                #),
             )
 
     # # # condense_question_prompt_help = "This prompt is used to convert the user's input to a standalone question, using the context of the chat history."
@@ -438,7 +444,8 @@ Use the Retrieved Documents to answer the question: {question}
                     ],
                     "enable_content_safety": st.session_state["enable_content_safety"],
                     "ai_assistant_type": st.session_state["ai_assistant_type"],
-                    "conversational_flow": st.session_state["conversational_flow"],
+                    ################### conversational flow to be deleted
+                    #"conversational_flow": st.session_state["conversational_flow"],
                 },
                 "messages": {
                     "post_answering_filter": st.session_state[

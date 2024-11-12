@@ -2,7 +2,7 @@ import logging
 from typing import List
 import json
 from openai import Stream
-from openai.types.chat import ChatCompletionChunk
+from openai.types.chat import ChatCompletionChunk, ChatCompletion
 from flask import Response
 
 from .orchestrator_base import OrchestratorBase
@@ -40,19 +40,47 @@ class ByodOrchestrator(OrchestratorBase):
         # - in_scope: it's a parameter in the payload so it's implied and managed by the server if optional or mandatory
 
         openai_client = self.llm_helper.openai_client
-
-        request_messages: List[dict] = [{"role": "user", "content": user_message}]
         messages = []
 
-        # keeping the default prompts for now - change here if needed
+        # Create conversation history
         if self.config.prompts.use_on_your_data_format:
             messages.append(
                 {"role": "system", "content": self.config.prompts.answering_system_prompt}
             )
+        else:
+            messages.append(
+                {"role": "system", "content": "You are a helpful AI agent."}
+            )
+
+
+        # Create conversation history
+        for message in chat_history:
+            messages.append({"role": message["role"], "content": message["content"]})
+        messages.append({"role": "user", "content": user_message})
+
+        is_in_scope = self.env_helper.AZURE_SEARCH_ENABLE_IN_DOMAIN
+        #request_messages: List[dict] = [{"role": "user", "content": user_message}]
+
+        #messages= [
+        #    {
+        #        "role": "user",
+        #        "content": "Summarize the Life in Green case study."
+        #    },
+        #    {
+        #        "role": "assistant",
+        #        "content": "The \"Life in Green\" case study revolves around a unique campaign designed to support Real Betis, a football club in Seville, Spain. The challenge was to create a way for fans to support their team during significant life moments, specifically targeting the rivalry with Sevilla FC, whose colors are red and white."
+        #    },
+        #    {
+        #        "role": "user",
+        #        "content": "Please reformat it into 2 key bulletpoints."
+        #    }
+        #]
+        # keeping the default prompts for now - change here if needed
+
         # build the message array for the payload
-        logger.info("Request messages: %s", request_messages)
-        for message in request_messages:
-            messages.append({"role": message['role'], "content": message["content"]})
+        #logger.info("Request messages: %s", messages)
+        #for message in request_messages:
+        #    messages.append({"role": message['role'], "content": message["content"]})
 
         # Azure OpenAI takes the deployment name as the model name, "AZURE_OPENAI_MODEL" means
         # deployment name.
@@ -128,6 +156,9 @@ class ByodOrchestrator(OrchestratorBase):
             },
         )
 
+        # update chat history with response
+        #chat_history = self._update_chat_history_with_llm_response(chat_history, response.choices[0].message)
+
 
         if not self.env_helper.SHOULD_STREAM:
             citations = self.get_citations(citation_list=response.choices[0].message.model_extra["context"])
@@ -191,12 +222,12 @@ class ByodOrchestrator(OrchestratorBase):
 
             #q = Answer.from_json
 
-            messages = self.output_parser.parse(
+            parsed_messages = self.output_parser.parse(
                 question=user_message,
                 answer=response.choices[0].message.content,
                 source_documents=list_source_docs
             )
-            return messages
+            return parsed_messages
 
             #return response_obj
 
@@ -211,6 +242,17 @@ class ByodOrchestrator(OrchestratorBase):
 #            url = url.replace("_SAS_TOKEN_PLACEHOLDER_", container_sas)
 #        return f"[{title}]({url})"
 
+    def _update_chat_history_with_llm_response(self, chat_history: List[dict], message) -> List[dict]:
+        """
+        Add a message to the chat history dictionary list
+        :param self
+        :param chat_history: List of messages
+        :param message: Message to add from the response
+        :return: Updated chat history
+        """
+        chat_history.append({"role": "assistant", "content": message.content})
+        logger.debug("Chat history updated.")
+        return chat_history
 
     def get_citations(self, citation_list):
         """Returns Formated Citations"""
