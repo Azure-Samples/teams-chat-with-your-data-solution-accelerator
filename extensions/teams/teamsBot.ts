@@ -18,12 +18,12 @@ const EMPTY_RESPONSE = "Sorry, I do not have an answer. Please try again.";
 
 const history: ChatMessage[] = []; // JM+ Store the user's message in the history
 
-// Function to clear history after a period of time
+// Function to clear history after a period of time, not used in this version
 const clearHistory = () => {
   history.length = 0;
 };
 
-// Set an interval to clear history every 2 minutes (120000 milliseconds)
+// Set an interval to clear history every 2 minutes (120000 milliseconds) not used in this version
 //setInterval(clearHistory, 120000);
 
 export class TeamsBot extends TeamsActivityHandler {
@@ -66,7 +66,7 @@ export class TeamsBot extends TeamsActivityHandler {
         history.push(userMessage); // JM+ Store the user's message in the history
         const httpBody = JSON.stringify({
           messages: history, //JM amended to include the user's message
-          conversation_id: "",
+          conversation_id: "", // JM perhaps to put some Teams conversation ID here?
         });
         console.log(httpBody);
         // Call the Azure Function to get the response from Azure OpenAI on your Data
@@ -151,14 +151,15 @@ export class TeamsBot extends TeamsActivityHandler {
               newActivity = MessageFactory.text(answerwithdisclaimertext);
             } else {
               const citations = parseCitationFromMessage(answers[index - 1]) as Citation[];
-              //JM need to look at how we can add the clear history button here
-              if (citations.length === 0) {
-                newActivity = MessageFactory.text(answerwithdisclaimertext);
-                newActivity.id = reply.id;
-              } else {
+              //JM, so if the citations are empty, we will just show the disclaimer text
+              // why not just use the assistant answer?
+              // if (citations.length === 0) {
+              //   newActivity = MessageFactory.text(answerwithdisclaimertext);
+              //   newActivity.id = reply.id;
+              // } else {
                 newActivity = MessageFactory.attachment(cwydResponseBuilder(citations, assistantAnswer));
                 activityUpdated = false;
-              }
+              //}
             }
   
 
