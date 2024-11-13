@@ -16,11 +16,13 @@ import { cwydResponseBuilder } from "./cards/cardBuilder";
 
 const EMPTY_RESPONSE = "Sorry, I do not have an answer. Please try again.";
 
-const history: ChatMessage[] = []; // JM+ Store the user's message in the history
+const history: { [conversationId: string]: ChatMessage[] } = {}; // JM+ Store the user's message in the history
 
 // Function to clear history after a period of time, not used in this version
-const clearHistory = () => {
-  history.length = 0;
+const clearHistory = (conversationId: string) => {
+  if (history[conversationId]) {
+    delete history[conversationId];
+  }
 };
 
 // Set an interval to clear history every 2 minutes (120000 milliseconds) not used in this version
@@ -40,9 +42,13 @@ export class TeamsBot extends TeamsActivityHandler {
 
       //JM added the clear history functionality
       const activity = context.activity;
+      const conversation = context.activity.conversation;
+      const conversationId = conversation.id;
       if (activity.value && activity.value.action === "clearHistory") {
         // Clear the chat history
-        history.length = 0;
+        if (history[conversationId]) {
+          delete history[conversationId];
+        }
         await context.sendActivity("Chat history has been cleared.");
         return;
       }
@@ -63,10 +69,13 @@ export class TeamsBot extends TeamsActivityHandler {
           role: "user",
           content: txt,
         };
-        history.push(userMessage); // JM+ Store the user's message in the history
+        if (!history[conversationId]) {
+          history[conversationId] = [];
+        }
+        history[conversationId].push(userMessage); // JM+ Store the user's message in the history
         const httpBody = JSON.stringify({
-          messages: history, //JM amended to include the user's message
-          conversation_id: "", // JM perhaps to put some Teams conversation ID here?
+          messages: history[conversationId], //JM amended to include the user's message
+          conversation_id: conversationId, // JM perhaps to put some Teams conversation ID here?
         });
         console.log(httpBody);
         // Call the Azure Function to get the response from Azure OpenAI on your Data
@@ -104,7 +113,7 @@ export class TeamsBot extends TeamsActivityHandler {
                     });
                   } else {
                     answers.push(userMessage, ...result.choices[0].messages);
-                    history.push(result.choices[0].messages[result.choices[0].messages.length - 1]); // JM+ Store the assistant's last message in the history
+                    history[conversationId].push(result.choices[0].messages[result.choices[0].messages.length - 1]); // JM+ Store the assistant's last message in the history
                   }
                   runningText = "";
                 } catch (e) {
