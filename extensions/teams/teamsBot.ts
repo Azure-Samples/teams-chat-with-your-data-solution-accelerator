@@ -44,12 +44,13 @@ export class TeamsBot extends TeamsActivityHandler {
       const activity = context.activity;
       const conversation = context.activity.conversation;
       const conversationId = conversation.id;
+      console.log("Conversation ID: " + conversationId);
       if (activity.value && activity.value.action === "clearHistory") {
         // Clear the chat history
         if (history[conversationId]) {
           delete history[conversationId];
         }
-        await context.sendActivity("Chat history has been cleared.");
+        await context.sendActivity("Chat history has a new conversation.");
         return;
       }
       const removedMentionText = TurnContext.removeRecipientMention(
@@ -166,8 +167,13 @@ export class TeamsBot extends TeamsActivityHandler {
               //   newActivity = MessageFactory.text(answerwithdisclaimertext);
               //   newActivity.id = reply.id;
               // } else {
-                newActivity = MessageFactory.attachment(cwydResponseBuilder(citations, assistantAnswer));
-                activityUpdated = false;
+                
+                // JM+ count how many messages the user has sent, so the adaptive card can display later  
+                const userMessageCount = history[conversationId].filter(msg => msg.role === "user").length;
+                console.log("User message count: " + userMessageCount);
+                newActivity = MessageFactory.attachment(cwydResponseBuilder(citations, assistantAnswer, userMessageCount));
+                activityUpdated = true; // JM+ Set the flag to update the activity
+                newActivity.id = reply.id;
               //}
             }
   
