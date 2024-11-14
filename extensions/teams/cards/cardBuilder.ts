@@ -45,7 +45,7 @@ export function actionBuilder(citation: Citation, docId: number): any {
 
     return citationCardAction;
 }
-export function cardBodyBuilder(citations: any[], assistantAnswer: string): any {
+export function cardBodyBuilder(citations: any[], assistantAnswer: string, userMessageCount: number): any {
     let answerCard = {
         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
         "version": "1.6",
@@ -61,7 +61,15 @@ export function cardBodyBuilder(citations: any[], assistantAnswer: string): any 
                 actions: []
             }, {
                 type: CardType.TextBlock,
-                text: "AI-generated content may be incorrect",
+                text: `Answer based on the previous ${userMessageCount} user prompts.`,
+                wrap: true,
+                weight: "lighter",
+                size: "small",
+                color: "default"
+            },
+            {
+                type: CardType.TextBlock,
+                text: `AI-generated content may be incorrect`,
                 wrap: true,
                 weight: "lighter",
                 size: "small",
@@ -98,7 +106,7 @@ export function cardBodyBuilder(citations: any[], assistantAnswer: string): any 
 
     return answerCard;
 }
-export function cwydResponseBuilder(citations: Citation[], assistantAnswer: string): Attachment {
+export function cwydResponseBuilder(citations: Citation[], assistantAnswer: string, userMessageCount: number): Attachment {
     let citationActions: any[] = [];
     let docId = 1;
     let deleteEnd = "";
@@ -124,6 +132,6 @@ export function cwydResponseBuilder(citations: Citation[], assistantAnswer: stri
     });
     assistantAnswer = assistantAnswer.replaceAll(deleteEnd, "");
     assistantAnswer = assistantAnswer.replaceAll(deleteEndSpace, "");
-    let answerCard = CardFactory.adaptiveCard(cardBodyBuilder(citationActions, assistantAnswer));
+    let answerCard = CardFactory.adaptiveCard(cardBodyBuilder(citationActions, assistantAnswer, userMessageCount));
     return answerCard;
 }
