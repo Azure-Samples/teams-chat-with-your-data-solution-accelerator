@@ -3,6 +3,7 @@ from .open_ai_functions import OpenAIFunctionsOrchestrator
 from .lang_chain_agent import LangChainAgent
 from .semantic_kernel import SemanticKernelOrchestrator
 from .prompt_flow import PromptFlowOrchestrator
+from .byod_orchestrator import ByodOrchestrator
 
 
 def get_orchestrator(orchestration_strategy: str):
@@ -14,5 +15,7 @@ def get_orchestrator(orchestration_strategy: str):
         return SemanticKernelOrchestrator()
     elif orchestration_strategy == OrchestrationStrategy.PROMPT_FLOW.value:
         return PromptFlowOrchestrator()
+    elif orchestration_strategy == OrchestrationStrategy.BYOD.value:
+        return ByodOrchestrator()
     else:
-        raise Exception(f"Unknown orchestration strategy: {orchestration_strategy}")
+        raise ValueError(f"Unknown orchestration strategy: {orchestration_strategy}")

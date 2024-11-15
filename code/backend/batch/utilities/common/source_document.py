@@ -52,15 +52,22 @@ class SourceDocument:
 
     @classmethod
     def from_dict(cls, dict_obj):
+        """
+        Create a SourceDocument instance from a dictionary.
+
+        :param dict_obj: Dictionary containing the SourceDocument attributes, at least the mandatory ones.
+        :return: SourceDocument instance.
+        """
         return cls(
-            dict_obj["id"],
+            # using dict.get() for the optional attributes
             dict_obj["content"],
             dict_obj["source"],
-            dict_obj["title"],
-            dict_obj["chunk"],
-            dict_obj["offset"],
-            dict_obj["page_number"],
-            dict_obj["chunk_id"],
+            dict_obj.get("id"),
+            dict_obj.get("title"),
+            dict_obj.get("chunk"),
+            dict_obj.get("offset"),
+            dict_obj.get("page_number"),
+            dict_obj.get("chunk_id"),
         )
 
     @classmethod

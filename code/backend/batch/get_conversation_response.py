@@ -33,19 +33,20 @@ async def do_get_conversation_response(req: func.HttpRequest) -> func.HttpRespon
                 lambda x: x["role"] in ("user", "assistant"), req_body["messages"][0:-1]
             )
         )
-        chat_history = []
-        for i, k in enumerate(user_assistant_messages):
-            if i % 2 == 0:
-                chat_history.append(
-                    (
-                        user_assistant_messages[i]["content"],
-                        user_assistant_messages[i + 1]["content"],
-                    )
-                )
+        # JM commented out
+        # chat_history = []
+        # for i, k in enumerate(user_assistant_messages):
+        #     if i % 2 == 0:
+        #         chat_history.append(
+        #             (
+        #                 user_assistant_messages[i]["content"],
+        #                 user_assistant_messages[i + 1]["content"],
+        #             )
+        #         )
 
         messages = await message_orchestrator.handle_message(
             user_message=user_message,
-            chat_history=chat_history,
+            chat_history=user_assistant_messages,  # was chat_history, #JM changed
             conversation_id=conversation_id,
             orchestrator=ConfigHelper.get_active_config_or_default().orchestrator,
         )
