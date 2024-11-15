@@ -78,7 +78,7 @@ class ByodOrchestrator(OrchestratorBase):
         # keeping the default prompts for now - change here if needed
 
         # build the message array for the payload
-        #logger.info("Request messages: %s", messages)
+        logger.info("Request messages: %s", messages)
         #for message in request_messages:
         #    messages.append({"role": message['role'], "content": message["content"]})
 
@@ -149,7 +149,7 @@ class ByodOrchestrator(OrchestratorBase):
                                 else ""
                             ),
                             # is this overriding the system message??????
-                            "role_information": self.env_helper.AZURE_OPENAI_SYSTEM_MESSAGE,  # is this overriding the system message??????
+                            # "role_information": self.env_helper.AZURE_OPENAI_SYSTEM_MESSAGE,  # is this overriding the system message??????
                         },
                     }
                 ]
