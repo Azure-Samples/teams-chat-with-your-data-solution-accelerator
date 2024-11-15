@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# rest client tests for local development and testing
+*.http
+
 # generated frontend files
 code/dist/
 
