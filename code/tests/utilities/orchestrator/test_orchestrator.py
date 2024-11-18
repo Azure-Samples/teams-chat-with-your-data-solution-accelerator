@@ -40,6 +40,7 @@ async def test_orchestrator_langchain():
     assert messages[-1]["content"] != ""
 
 
+# TEST FOR THE BYOD ORCHESTRATOR
 @pytest.mark.azure("This test requires Azure Open AI configured")
 @pytest.mark.asyncio
 async def test_orchestrator_byod():

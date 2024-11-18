@@ -19,9 +19,30 @@ class ByodOrchestrator(OrchestratorBase):
         super().__init__()
         self.llm_helper = LLMHelper()
         self.env_helper = EnvHelper()
-        # delete config if default message is not needed
-        #self.config = ConfigHelper.get_active_config_or_default()
 
+    def create_full_chat_history(
+        self, user_message: str,
+        chat_history: List[dict]
+    ) -> List[dict]:
+        '''
+        Function to aggregate the user message and chat history into a single list of dictionaries.
+        :param user_message: The user message to be added to the chat history.
+        :param chat_history: The chat history list of dictionaries.
+        :return: The full chat history list of dictionaries.
+        '''
+        messages = []
+        # append system prompt
+        if self.config.prompts.use_on_your_data_format:
+            messages.append({"role": "system", "content": self.config.prompts.answering_system_prompt})
+        else: # we might want to change this into a configurable item
+            messages.append({"role": "system", "content": "You are a helpful AI agent."})
+        # appendd messages from chat history
+        for message in chat_history:
+            messages.append({"role": message["role"], "content": message["content"]})
+        # append user message
+        messages.append({"role": "user", "content": user_message})
+
+        return messages
 
     async def orchestrate(
         self,
@@ -29,6 +50,12 @@ class ByodOrchestrator(OrchestratorBase):
         chat_history: List[dict],
         **kwargs: dict
     ) -> list[dict]:
+        """
+        Orchestrates the conversation with Azure OpenAI and AI search via the OYD API.
+        :param user_message: The user message to be processed.
+        :param chat_history: The chat history list of dictionaries.
+        :return: The response from the orchestrator.
+        """
 
         # Call Content Safety tool
         if self.config.prompts.enable_content_safety:
@@ -39,26 +66,27 @@ class ByodOrchestrator(OrchestratorBase):
         # I don't think there should be a distinction between should use data and should not use data - let's just leave the without data func but default to the other one
         # - in_scope: it's a parameter in the payload so it's implied and managed by the server if optional or mandatory
 
+        messages = self.create_full_chat_history(user_message, chat_history)
         openai_client = self.llm_helper.openai_client
-        messages = []
+        #messages = []
 
         # Create conversation history
-        if self.config.prompts.use_on_your_data_format:
-            messages.append(
-                {"role": "system", "content": self.config.prompts.answering_system_prompt}
-            )
-        else:
-            messages.append(
-                {"role": "system", "content": "You are a helpful AI agent."}
-            )
-
-
-        # Create conversation history
-        for message in chat_history:
-            messages.append({"role": message["role"], "content": message["content"]})
-        messages.append({"role": "user", "content": user_message})
-
-        is_in_scope = self.env_helper.AZURE_SEARCH_ENABLE_IN_DOMAIN
+        #if self.config.prompts.use_on_your_data_format:
+        #    messages.append(
+        #        {"role": "system", "content": self.config.prompts.answering_system_prompt}
+        #    )
+        #else:
+        #    messages.append(
+        #        {"role": "system", "content": "You are a helpful AI agent."}
+        #    )
+#
+#
+        ## Create conversation history
+        #for message in chat_history:
+        #    messages.append({"role": message["role"], "content": message["content"]})
+        #messages.append({"role": "user", "content": user_message})
+#
+        #is_in_scope = self.env_helper.AZURE_SEARCH_ENABLE_IN_DOMAIN
         #request_messages: List[dict] = [{"role": "user", "content": user_message}]
 
         #messages= [
