@@ -8,7 +8,10 @@ import {
   ConfigurationServiceClientCredentialFactory,
   ConfigurationBotFrameworkAuthentication,
   TurnContext,
+  UserState
 } from "botbuilder";
+
+import { CosmosDbPartitionedStorage } from "botbuilder-azure";
 
 // This bot's main dialog.
 import { TeamsBot } from "./teamsBot";
@@ -26,6 +29,17 @@ const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication(
   {},
   credentialsFactory
 );
+
+// Cosmmos user data store
+const cosmosDbStorage = new CosmosDbPartitionedStorage({
+  cosmosDbEndpoint: config.cosmosEndpoint,
+  authKey: config.cosmosPassword,
+  databaseId: config.cosmosDatabaseName,
+  containerId: config.cosmosContainerName,
+});
+
+// Create user state
+const userState = new UserState(cosmosDbStorage); 
 
 const adapter = new CloudAdapter(botFrameworkAuthentication);
 
@@ -56,7 +70,7 @@ const onTurnErrorHandler = async (context: TurnContext, error: Error) => {
 adapter.onTurnError = onTurnErrorHandler;
 
 // Create the bot that will handle incoming messages.
-const bot = new TeamsBot();
+const bot = new TeamsBot(userState);
 
 // Create HTTP server.
 const server = restify.createServer();
