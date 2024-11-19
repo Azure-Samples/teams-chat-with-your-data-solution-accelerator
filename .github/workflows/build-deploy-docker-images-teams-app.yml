@@ -1,13 +1,12 @@
-name: Backend App - Build and Deploy Docker Image
+name: Teams App - Build and Deploy Docker Image
 
 on:
   workflow_dispatch:
   push:
     branches:
-        - main
+      - main
     paths:
-      - 'code/backend/batch/**'
-
+      - 'extensions/teams/**'
   pull_request:
     branches: [main]
     types:
@@ -16,7 +15,7 @@ on:
         - reopened
         - synchronize
     paths:
-      - 'code/backend/batch/**'
+      - 'extensions/teams/**'
 
 permissions:
   contents: read
@@ -27,8 +26,8 @@ jobs:
    if: github.ref != 'refs/heads/main'
    uses: ./.github/workflows/reusable-build-push-docker-image.yml
    with:
-      dockerfile: "docker/Backend.Dockerfile"
-      image_name: "backend-app"
+      dockerfile: "docker/TeamsApp.Dockerfile"
+      image_name: "teams-app"
       tag_name: ${{ github.run_number }}
    secrets:
       inherit
@@ -37,9 +36,9 @@ jobs:
     needs: build-push-docker-image
     uses: ./.github/workflows/reusable-deploy-docker-image.yml
     with:
-      image_name: "backend-app"
-      deploy_command: "function-app"
-      service_name: "backend-app"
+      image_name: "teams-app"
+      deploy_command: "app-service"
+      service_name: "teams-app"
       tag_name: ${{ github.run_number }}
     secrets:
       inherit
@@ -49,7 +48,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/reusable-copy-docker-image.yml
     with:
-      image_name: "backend-app"
+      image_name: "teams-app"
       source_environment: "dev"
       destination_environment: "prod"
     secrets:

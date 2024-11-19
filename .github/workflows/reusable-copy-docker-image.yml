@@ -1,0 +1,69 @@
+name: Reusable Docker build and push workflow
+
+on:
+  workflow_call:
+   inputs:
+      image_name:
+          required: true
+          type: string
+
+      source_environment:
+        required: true
+        type: string
+
+      destination_environment:
+        required: true
+        type: string
+
+jobs:
+  copy-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Format input values
+        run : |
+          echo "SOURCE_ENV=$(echo ${{ inputs.source_environment }} | tr '[:lower:]' '[:upper:]')" >> $GITHUB_ENV
+
+          echo "DEST_ENV=$(echo ${{ inputs.destination_environment }} | tr '[:lower:]' '[:upper:]')" >> $GITHUB_ENV
+
+      - name: Get Source ACR details
+        run: |
+
+            echo "source_acr=${{ env.SOURCE_ENV }}_AZURE_CONTAINER_REGISTRY"  >> $GITHUB_ENV
+            echo "source_acr_un=${{ env.SOURCE_ENV }}_AZURE_CONTAINER_REGISTRY_USER_NAME" >> $GITHUB_ENV
+            echo "source_acr_pwd=${{ env.SOURCE_ENV }}_AZURE_CONTAINER_REGISTRY_PASSWORD"  >> $GITHUB_ENV
+
+      - name: Get Destination ACR details
+        run: |
+
+            echo "dest_acr=${{ env.DEST_ENV  }}_AZURE_CONTAINER_REGISTRY"  >> $GITHUB_ENV
+            echo "dest_acr_un=${{ env.DEST_ENV }}_AZURE_CONTAINER_REGISTRY_USER_NAME" >> $GITHUB_ENV
+            echo "dest_acr_pwd=${{ env.DEST_ENV }}_AZURE_CONTAINER_REGISTRY_PASSWORD"  >> $GITHUB_ENV
+
+      - name: Docker Login to source ACR
+        uses: docker/login-action@v3
+        with:
+              registry: ${{ secrets[env.source_acr] }}
+              username: ${{ secrets[env.source_acr_un] }}
+              password: ${{ secrets[env.source_acr_pwd]  }}
+
+
+      - name: Pull Docker image from Source ACR
+        run: |
+          docker pull ${{ secrets[env.source_acr] }}/${{ inputs.image_name }}:latest
+
+      - name: Tag Docker image for Destination ACR
+        run: |
+          docker tag ${{ secrets[env.source_acr] }}/${{ inputs.image_name }}:latest ${{ secrets[env.dest_acr] }}/${{ inputs.image_name }}:latest
+
+      - name: Docker Login to destination ACR
+        uses: docker/login-action@v3
+        with:
+            registry: ${{ secrets[env.dest_acr] }}
+            username: ${{ secrets[env.dest_acr_un] }}
+            password: ${{ secrets[env.dest_acr_pwd]  }}
+
+
+      - name: Push Docker image to Destination ACR
+        run: |
+          docker push ${{ secrets[env.dest_acr] }}/${{ inputs.image_name }}:latest

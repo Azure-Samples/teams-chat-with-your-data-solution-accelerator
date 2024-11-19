@@ -2,30 +2,63 @@ name: Admin - Frontend App - Build and Deploy Docker Image
 
 on:
   workflow_dispatch:
+
   push:
+    branches:
+      - main
     paths:
       - 'code/backend/Admin.py'
       - 'code/backend/pages/**'
+
+  pull_request:
+    branches: [main]
+    types:
+        - opened
+        - ready_for_review
+        - reopened
+        - synchronize
+
+    paths:
+      - 'code/backend/Admin.py'
+      - 'code/backend/pages/**'
+
 permissions:
   contents: read
   id-token: write
 
+
 jobs:
   build-push-docker-image:
-   uses: ./.github/workflows/reusable-build-push-docker-image.yml
-   with:
+    if: github.ref != 'refs/heads/main'
+    uses: ./.github/workflows/reusable-build-push-docker-image.yml
+    with:
       dockerfile: "docker/Admin.Dockerfile"
-      image_name: ${{ vars.AZURE_ADMIN_APP_SERVICE_IMAGE_NAME }}
-
-   secrets:
+      image_name: "admin-frontend-app"
+      tag_name: ${{ github.run_number }}
+    secrets:
       inherit
 
+
+
   deploy-app:
-    needs: build-push-docker-image
+    needs: [build-push-docker-image]
     uses: ./.github/workflows/reusable-deploy-docker-image.yml
     with:
-      image_name: ${{ vars.AZURE_ADMIN_APP_SERVICE_IMAGE_NAME }}
+      image_name: "admin-frontend-app"
       deploy_command: "app-service"
-      service_name: ${{ vars.AZURE_ADMIN_APP_SERVICE_NAME }}
+      service_name: "admin-frontend-app"
+      tag_name: ${{ github.run_number }}
+    secrets:
+      inherit
+
+
+  # This job runs only when the change is pushed to the main branch
+  copy-acr-image:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/reusable-copy-docker-image.yml
+    with:
+      image_name: "admin-frontend-app"
+      source_environment: "dev"
+      destination_environment: "prod"
     secrets:
       inherit

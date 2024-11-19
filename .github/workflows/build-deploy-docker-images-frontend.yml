@@ -3,18 +3,32 @@ name: Frontend App - Build and Deploy Docker Image
 on:
   workflow_dispatch:
   push:
+    branches:
+          - main
     paths:
       - 'code/frontend/src/**'
+  pull_request:
+    branches: [main]
+    types:
+        - opened
+        - ready_for_review
+        - reopened
+        - synchronize
+    paths:
+      - 'code/frontend/src/**'
+
 permissions:
   contents: read
   id-token: write
 
 jobs:
   build-push-docker-image:
+   if: github.ref != 'refs/heads/main'
    uses: ./.github/workflows/reusable-build-push-docker-image.yml
    with:
      dockerfile: "docker/Frontend.Dockerfile"
-     image_name: ${{ vars.AZURE_APP_SERVICE_IMAGE_NAME }}
+     image_name: "frontend-app"
+     tag_name: ${{ github.run_number }}
    secrets:
      inherit
 
@@ -22,8 +36,20 @@ jobs:
     needs: build-push-docker-image
     uses: ./.github/workflows/reusable-deploy-docker-image.yml
     with:
-      image_name: ${{ vars.AZURE_APP_SERVICE_IMAGE_NAME }}
+      image_name: "frontend-app"
       deploy_command: "app-service"
-      service_name: ${{ vars.AZURE_APP_SERVICE_NAME }}
+      service_name: "frontend-app"
+      tag_name: ${{ github.run_number }}
+    secrets:
+      inherit
+
+  # This job runs only when the change is pushed to the main branch
+  copy-acr-image:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/reusable-copy-docker-image.yml
+    with:
+      image_name: "frontend-app"
+      source_environment: "dev"
+      destination_environment: "prod"
     secrets:
       inherit
