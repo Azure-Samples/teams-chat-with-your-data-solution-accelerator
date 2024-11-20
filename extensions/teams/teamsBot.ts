@@ -3,20 +3,25 @@ import {
   TurnContext,
   CardFactory,
   ActivityTypes,
-  MessageFactory
+  MessageFactory,
+  UserState
 } from "botbuilder";
+
 import config from "./config";
+
 import {
   ChatMessage,
   ChatResponse,
   ToolMessageContent,
   Citation,
 } from "./model";
+
 import { cwydResponseBuilder } from "./cards/cardBuilder";
 
 const EMPTY_RESPONSE = "Sorry, I do not have an answer. Please try again.";
 
 const history: { [conversationId: string]: ChatMessage[] } = {}; // JM+ Store the user's message in the history
+
 
 // Function to clear history after a period of time, not used in this version
 const clearHistory = (conversationId: string) => {
@@ -29,8 +34,14 @@ const clearHistory = (conversationId: string) => {
 //setInterval(clearHistory, 120000);
 
 export class TeamsBot extends TeamsActivityHandler {
-  constructor() {
+  userState: UserState;
+  userDataAccessor: any;
+
+  constructor(userState) {
     super();
+    this.userState = userState;
+    // Define a property accessor for the conversation data  
+    const userDataAccessor = userState.createProperty('userData');
     let newActivity;
     let assistantAnswer = "";
     let answerwithdisclaimertext = "";
@@ -44,12 +55,17 @@ export class TeamsBot extends TeamsActivityHandler {
       const activity = context.activity;
       const conversation = context.activity.conversation;
       const conversationId = conversation.id;
+      const userStateData = await userDataAccessor.get(context, {});
+
       console.log("Conversation ID: " + conversationId);
       if (activity.value && activity.value.action === "clearHistory") {
         // Clear the chat history
         if (history[conversationId]) {
           delete history[conversationId];
         }
+        //const usrData = await userDataAccessor.get(context, {});
+        userStateData.chat = [];
+        await userState.saveChanges(context, true);
         await context.sendActivity("Chat history has a new conversation.");
         return;
       }
@@ -70,12 +86,21 @@ export class TeamsBot extends TeamsActivityHandler {
           role: "user",
           content: txt,
         };
+
+        // Push user message into Cosmos user chat history
+        if (!userStateData.chat) {  
+          userStateData.chat = [userMessage];
+        }
+        else{
+          userStateData.chat.push(userMessage);
+        }
+
         if (!history[conversationId]) {
           history[conversationId] = [];
         }
         history[conversationId].push(userMessage); // JM+ Store the user's message in the history
         const httpBody = JSON.stringify({
-          messages: history[conversationId], //JM amended to include the user's message
+          messages: userStateData.chat, //history[conversationId], //JM amended to include the user's message
           conversation_id: conversationId, // JM perhaps to put some Teams conversation ID here?
         });
         console.log(httpBody);
@@ -102,7 +127,7 @@ export class TeamsBot extends TeamsActivityHandler {
               var text = new TextDecoder("utf-8").decode(value);
               console.log(text);
               const objects = text.split("\n");
-              objects.forEach((obj) => {
+              objects.forEach(async (obj) => {
                 try {
                   runningText += obj;
                   result = JSON.parse(runningText);
@@ -114,7 +139,11 @@ export class TeamsBot extends TeamsActivityHandler {
                     });
                   } else {
                     answers.push(userMessage, ...result.choices[0].messages);
+                    // local save the chat history
                     history[conversationId].push(result.choices[0].messages[result.choices[0].messages.length - 1]); // JM+ Store the assistant's last message in the history
+                    // cosmos save the chat history
+                    userStateData.chat.push(result.choices[0].messages[result.choices[0].messages.length - 1]);
+                    await userState.saveChanges(context, false);
                   }
                   runningText = "";
                 } catch (e) {
