@@ -25,17 +25,20 @@ param location string = resourceGroup().location
 
 // Compute resources for your Web App
 resource serverfarm 'Microsoft.Web/serverfarms@2021-02-01' = {
-  kind: 'app'
+  kind: 'app,linux'
   location: location
   name: serverfarmsName
   sku: {
     name: webAppSKU
   }
+  properties: {
+    reserved: true
+  }
 }
 
 // Web App that hosts your bot
 resource webApp 'Microsoft.Web/sites@2021-02-01' = {
-  kind: 'app'
+  kind: 'app,linux'
   location: location
   name: webAppName
   properties: {
