@@ -20,7 +20,22 @@ param webAppSKU string
 param botDisplayName string
 
 param serverfarmsName string = resourceBaseName
+
+@description('Name of the CosmosDB container')
+param cosmosDBContainerName string
+
+@description('Endpoint of the CosmosDB')
+param cosmosDBEndpoint string
+
+@description('Name of the CosmosDB database')
+param cosmosDBDatabaseName string
+
 param webAppName string = resourceBaseName
+
+@secure()
+@description('Key of the CosmosDB')
+param cosmosDBKEY string
+
 param location string = resourceGroup().location
 
 // Compute resources for your Web App
@@ -72,6 +87,23 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
           name: 'AZURE_FUNCTION_URL'
           value: azureFunctionURL
         }
+        {
+          name: 'COSMOSDB_CONTAINER_NAME'
+          value: cosmosDBContainerName
+        }
+        {
+          name: 'COSMOSDB_DATABASE_NAME'
+          value: cosmosDBDatabaseName
+        }
+        {
+            name: 'COSMOSDB_ENDPOINT'
+            value: cosmosDBEndpoint
+        }
+        {
+            name: 'COSMOSDB_KEY'
+            value: cosmosDBKEY
+        }
+
       ]
       ftpsState: 'FtpsOnly'
     }
