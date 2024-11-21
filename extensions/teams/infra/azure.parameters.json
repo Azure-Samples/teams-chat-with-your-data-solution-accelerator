@@ -21,16 +21,16 @@
       "value": "teams-bot-toolkit"
     },
     "cosmosDBContainerName": {
-      "value": "ENTER_COSMOSDB_CONTAINER_NAME"
+      "value": "${{COSMOSDB_CONTAINER_NAME}}"
     },
     "cosmosDBDatabaseName": {
-      "value": "ENTER_COSMOSDB_DATABASE_NAME"
+      "value": "${{COSMOSDB_DATABASE_NAME}}"
     },
     "cosmosDBEndpoint": {
-      "value": "ENTER_COSMOSDB_ENDPOINT"
+      "value": "${{COSMOSDB_ENDPOINT}}"
     },
     "cosmosDBKEY": {
-      "value": "ENTER_COSMOSDB_KEY"
+      "value": "${{COSMOSDB_KEY}}"
     }
   }
 }
