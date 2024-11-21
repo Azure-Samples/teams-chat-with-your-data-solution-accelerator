@@ -19,6 +19,18 @@
     },
     "botDisplayName": {
       "value": "teams-bot-toolkit"
+    },
+    "cosmosDBContainerName": {
+      "value": "ENTER_COSMOSDB_CONTAINER_NAME"
+    },
+    "cosmosDBDatabaseName": {
+      "value": "ENTER_COSMOSDB_DATABASE_NAME"
+    },
+    "cosmosDBEndpoint": {
+      "value": "ENTER_COSMOSDB_ENDPOINT"
+    },
+    "cosmosDBKEY": {
+      "value": "ENTER_COSMOSDB_KEY"
     }
   }
 }
