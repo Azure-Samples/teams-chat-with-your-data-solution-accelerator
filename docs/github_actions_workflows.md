@@ -155,7 +155,7 @@ To trigger the workflow automatically, push changes to the `extensions/teams/**`
 
 The workflows use the following secrets:
 
-![GitHub Actions Workflows Secrets](./images/github_Actions_workflows_secrets.png)
+![GitHub Actions Workflows Secrets](./images/github_actions_workflows_secrets.png)
 
 | Secret Name                          | Description                                      | Example Value                  |
 |--------------------------------------|--------------------------------------------------|--------------------------------|
