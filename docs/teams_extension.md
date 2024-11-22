@@ -50,6 +50,10 @@ This extension enables users to experience Chat with your data within Teams, wit
 
   **Sign in to Azure**: Use your Azure account for deploying your app on Azure. You can [create a free Azure account](https://azure.microsoft.com/free/) before you start.
 
+
+> **WARNING**: When deploying the Azure Bot Service, if the Microsoft 365 is in a different tenant than your Azure resources, then the App Registration associated with your resultant Bot Service instance will not be in Azure, but in Entra in the M365 tenant! To access Entra in an M365 tenant, open another tab where you are authenticated to this tenant and enter https://portal.azure.com. This will allow you to choose *Microsoft Entra ID* from the top left menu. Your app registation can be amended there. This is where you will need to create a new secret if the old one expires.
+
+
 ![Teams Toolkit Accounts](images/teams-3.png)
 
 9. Under **Environment**, select **test**.
