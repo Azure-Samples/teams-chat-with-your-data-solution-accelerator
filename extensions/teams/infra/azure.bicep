@@ -84,7 +84,7 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
         {
           "name": 'COSMOSDB_KEY',
           "value": ''
-        },
+        }
       ]
       ftpsState: 'FtpsOnly'
     }
