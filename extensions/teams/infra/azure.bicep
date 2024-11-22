@@ -70,20 +70,20 @@ resource webApp 'Microsoft.Web/sites@2021-02-01' = {
           value: azureFunctionURL
         },  
         {
-          "name": "COSMOSDB_CONTAINER_NAME",
-          "value": "state"
+          "name": 'COSMOSDB_CONTAINER_NAME',
+          "value": 'state'
         },
         {
-          "name": "COSMOSDB_DATABASE_NAME",
-          "value": "db_conversation_history"
+          "name": 'COSMOSDB_DATABASE_NAME',
+          "value": 'db_conversation_history'
         },
         {
-          "name": "COSMOSDB_ENDPOINT",
-          "value": ""
+          "name": 'COSMOSDB_ENDPOINT',
+          "value": ''
         },
         {
-          "name": "COSMOSDB_KEY",
-          "value": ""
+          "name": 'COSMOSDB_KEY',
+          "value": ''
         },
       ]
       ftpsState: 'FtpsOnly'
