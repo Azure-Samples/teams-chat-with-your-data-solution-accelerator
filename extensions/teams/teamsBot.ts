@@ -23,16 +23,6 @@ const EMPTY_RESPONSE = "Sorry, I do not have an answer. Please try again.";
 const history: { [conversationId: string]: ChatMessage[] } = {}; // JM+ Store the user's message in the history
 
 
-// Function to clear history after a period of time, not used in this version
-const clearHistory = (conversationId: string) => {
-  if (history[conversationId]) {
-    delete history[conversationId];
-  }
-};
-
-// Set an interval to clear history every 2 minutes (120000 milliseconds) not used in this version
-//setInterval(clearHistory, 120000);
-
 export class TeamsBot extends TeamsActivityHandler {
   userState: UserState;
   userDataAccessor: any;
@@ -63,7 +53,6 @@ export class TeamsBot extends TeamsActivityHandler {
         if (history[conversationId]) {
           delete history[conversationId];
         }
-        //const usrData = await userDataAccessor.get(context, {});
         userStateData.chat = [];
         await userState.saveChanges(context, true);
         await context.sendActivity("Chat history has a new conversation.");
@@ -74,11 +63,13 @@ export class TeamsBot extends TeamsActivityHandler {
       );
       const txt = removedMentionText.toLowerCase().replace(/\n|\r/g, "").trim();
       try {
-        const reply = await context.sendActivity("Searching ...");
+        const searching = await context.sendActivity("Searching ...");
 
+        // set typing indicator
         const typingReply = await context.sendActivities([
           { type: ActivityTypes.Typing },
         ]);
+        console.log("Typing");
 
         // Create a new activity with the user's message as a reply.
         const answers: ChatMessage[] = [];
@@ -98,10 +89,10 @@ export class TeamsBot extends TeamsActivityHandler {
         if (!history[conversationId]) {
           history[conversationId] = [];
         }
-        history[conversationId].push(userMessage); // JM+ Store the user's message in the history
+        history[conversationId].push(userMessage); // Store the user's message in the history
         const httpBody = JSON.stringify({
-          messages: userStateData.chat, //history[conversationId], //JM amended to include the user's message
-          conversation_id: conversationId, // JM perhaps to put some Teams conversation ID here?
+          messages: userStateData.chat, 
+          conversation_id: conversationId, 
         });
         console.log(httpBody);
         // Call the Azure Function to get the response from Azure OpenAI on your Data
@@ -190,20 +181,12 @@ export class TeamsBot extends TeamsActivityHandler {
               newActivity = MessageFactory.text(answerwithdisclaimertext);
             } else {
               const citations = parseCitationFromMessage(answers[index - 1]) as Citation[];
-              //JM, so if the citations are empty, we will just show the disclaimer text
-              // why not just use the assistant answer?
-              // if (citations.length === 0) {
-              //   newActivity = MessageFactory.text(answerwithdisclaimertext);
-              //   newActivity.id = reply.id;
-              // } else {
-                
-                // JM+ count how many messages the user has sent, so the adaptive card can display later  
-                const userMessageCount = history[conversationId].filter(msg => msg.role === "user").length;
-                console.log("User message count: " + userMessageCount);
-                newActivity = MessageFactory.attachment(cwydResponseBuilder(citations, assistantAnswer, userMessageCount));
-                activityUpdated = true; // JM+ Set the flag to update the activity
-                newActivity.id = reply.id;
-              //}
+                         
+              // JM+ count how many messages the user has sent, so the adaptive card can display later  
+              const userMessageCount = history[conversationId].filter(msg => msg.role === "user").length;
+              console.log("User message count: " + userMessageCount);
+              newActivity = MessageFactory.attachment(cwydResponseBuilder(citations, assistantAnswer, userMessageCount));
+              newActivity.id = searching.id;
             }
   
 
@@ -212,7 +195,7 @@ export class TeamsBot extends TeamsActivityHandler {
               "Sorry, an error occurred. Try waiting a few minutes. If the issue persists, contact your system administrator. Error: " +
               answer.content
             );
-            newActivity.id = reply.id;
+            newActivity.id = searching.id;
           }
 
         });
@@ -222,7 +205,7 @@ export class TeamsBot extends TeamsActivityHandler {
           await context.updateActivity(newActivity);
         } else {
             try {
-              await context.deleteActivity(reply.id);
+              await context.deleteActivity(searching.id);
             } catch (error) {
               console.log('Error in deleting message', error);
             }
