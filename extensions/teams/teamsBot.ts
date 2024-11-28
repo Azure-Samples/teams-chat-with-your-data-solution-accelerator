@@ -40,7 +40,7 @@ export class TeamsBot extends TeamsActivityHandler {
   constructor(userState) {
     super();
     this.userState = userState;
-    // Define a property accessor for the conversation data  
+    // Define a property accessor for the conversation data
     const userDataAccessor = userState.createProperty('userData');
     let newActivity;
     let assistantAnswer = "";
@@ -74,7 +74,7 @@ export class TeamsBot extends TeamsActivityHandler {
       );
       const txt = removedMentionText.toLowerCase().replace(/\n|\r/g, "").trim();
       try {
-        const reply = await context.sendActivity("Searching ...");
+        const reply = await context.sendActivity("Responding ...");
 
         const typingReply = await context.sendActivities([
           { type: ActivityTypes.Typing },
@@ -88,7 +88,7 @@ export class TeamsBot extends TeamsActivityHandler {
         };
 
         // Push user message into Cosmos user chat history
-        if (!userStateData.chat) {  
+        if (!userStateData.chat) {
           userStateData.chat = [userMessage];
         }
         else{
@@ -196,8 +196,8 @@ export class TeamsBot extends TeamsActivityHandler {
               //   newActivity = MessageFactory.text(answerwithdisclaimertext);
               //   newActivity.id = reply.id;
               // } else {
-                
-                // JM+ count how many messages the user has sent, so the adaptive card can display later  
+
+                // JM+ count how many messages the user has sent, so the adaptive card can display later
                 const userMessageCount = history[conversationId].filter(msg => msg.role === "user").length;
                 console.log("User message count: " + userMessageCount);
                 newActivity = MessageFactory.attachment(cwydResponseBuilder(citations, assistantAnswer, userMessageCount));
@@ -205,7 +205,7 @@ export class TeamsBot extends TeamsActivityHandler {
                 newActivity.id = reply.id;
               //}
             }
-  
+
 
           } else if (answer.role === "error") {
             newActivity = MessageFactory.text(
@@ -228,7 +228,7 @@ export class TeamsBot extends TeamsActivityHandler {
             }
             await context.sendActivity(newActivity);
         }
-        
+
 
       } catch (error) {
         console.log('Error in onMessage:', error);
