@@ -271,7 +271,7 @@ class ByodOrchestrator(OrchestratorBase):
                 {
                     "content": citation["content"], #url + "\n\n\n" + citation["content"], ,
                     "id": metadata["id"],
-                    "chunk_id": citation.get('chunk_id'),#(
+                    #"chunk_id": citation.get('chunk_id'),#(
                     #    re.findall(r"\d+", metadata["chunk_id"])[-1]
                     #    if metadata["chunk_id"] is not None
                     #    else metadata["chunk"]
@@ -279,7 +279,8 @@ class ByodOrchestrator(OrchestratorBase):
                     "title": title,
                     #"filepath": title.split("/")[-1],
                     "source": metadata["source"],
-                    #"chunk": 0
+                    "chunk": metadata["chunk"],
+                    "offset": metadata["offset"],
                 }
             )
         return citations_dict
